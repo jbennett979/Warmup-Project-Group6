@@ -9,4 +9,6 @@ firebase_admin.initialize_app(cred)
 # Variable to access database from firestore
 db = firestore.client()
 
-# TODO: Send women_in_software_engineering_stats.json to database
+# TODO: Function that imports json file
+
+# TODO: Function that sends data up to firestore
