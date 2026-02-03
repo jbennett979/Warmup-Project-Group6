@@ -8,6 +8,9 @@ import json
 cred = credentials.Certificate("serviceAccount.json")
 firebase_admin.initialize_app(cred)
 
+
+# Obtained this delect_collection function from firestore.google.com
+# Loops through all of the documents of the collection and deletes them
 def delete_collection(coll_ref, batch_size):
     if batch_size == 0:
         return
@@ -23,6 +26,7 @@ def delete_collection(coll_ref, batch_size):
     if deleted >= batch_size:
         return delete_collection(coll_ref, batch_size)
 
+
 def upload_json():
     with open('women_in_software_engineering_stats.json', 'r') as json_file:
         data = json.load(json_file)
@@ -30,7 +34,6 @@ def upload_json():
 
 
 def upload_content(data):
-
     # Variable to access database from firestore
     db = firestore.client()
 
