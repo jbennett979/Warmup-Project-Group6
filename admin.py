@@ -34,12 +34,17 @@ def upload_content(data):
     # Variable to access database from firestore
     db = firestore.client()
 
+    # Name of collection in firestore
     collection_ref = db.collection("Women in Software Engineering")
 
+    # Deletes anything that was in the collection before
     delete_collection(collection_ref, 500)
 
     for entry in data:
         collection_ref.add(entry)
 
+
+# Import json file
 data = upload_json()
-upload_c
+# Upload file content to firestore
+upload_content(data)
