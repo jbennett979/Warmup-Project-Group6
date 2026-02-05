@@ -1,16 +1,9 @@
-import firebase_admin
-from firebase_admin import credentials, firestore
+import authentication
 import json
-
-
-# Accessing service key to allow changes to be made to firestore project
-# DO NOT ADD SERVICEACCOUNT TO REPO
-cred = credentials.Certificate("serviceAccount.json")
-firebase_admin.initialize_app(cred)
-
+import sys
 
 # Obtained this delect_collection function from firestore.google.com
-# Loops through all of the documents of the collection and deletes them
+# Loops through all the documents of the collection and deletes them
 def delete_collection(coll_ref, batch_size):
     if batch_size == 0:
         return
@@ -27,15 +20,15 @@ def delete_collection(coll_ref, batch_size):
         return delete_collection(coll_ref, batch_size)
 
 
-def upload_json():
-    with open('women_in_software_engineering_stats.json', 'r') as json_file:
+def upload_json(jsonFile):
+    with open(str(jsonFile), 'r') as json_file:
         data = json.load(json_file)
     return data
 
 
 def upload_content(data):
     # Variable to access database from firestore
-    db = firestore.client()
+    db = authentication.authenticate()
 
     # Name of collection in firestore
     collection_ref = db.collection("Women in Software Engineering")
@@ -46,8 +39,8 @@ def upload_content(data):
     for entry in data:
         collection_ref.add(entry)
 
-
 # Import json file
-data = upload_json()
+jsonFile = sys.argv[1]
+data = upload_json(jsonFile)
 # Upload file content to firestore
 upload_content(data)
