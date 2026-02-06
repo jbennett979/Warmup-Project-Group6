@@ -1,18 +1,16 @@
 import pyparsing as pp
 import authentication
 
-
 # main function
-# runs for how ever many queries user wants untill enter 'quit'
+# runs for how ever many queries user wants until enter 'quit'
 def main():
     send_query()
-
 
 # a function that allows the user to query then parses for input validation
 def get_query():
     # defining the tokens/patterns to be matched
-    string_cols = pp.oneOf("Company Team Last_updated")
-    num_cols = pp.oneOf("Num_female Num_eng Percent")
+    string_cols = pp.oneOf("company team last_updated")
+    num_cols = pp.oneOf("num_female_eng num_eng percent_female_eng")
     num_operators = pp.oneOf("== > < >= <= for")
     string_operators = pp.oneOf("== for")
     quotes = pp.QuotedString('"')

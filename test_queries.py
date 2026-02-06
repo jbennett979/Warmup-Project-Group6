@@ -1,13 +1,9 @@
 import authentication
 
 db = authentication.authenticate()
-
 collection_ref = db.collection("Women in Software Engineering")
 
-query = collection_ref.where('company', '==', 'GitHub')
+query = collection_ref.where('company', '==', 'GitHub').stream()
 
-results = query.stream()
-# print(query)
-
-for doc in results:
+for doc in query:
     print(f'{doc.id} => {doc.to_dict()}')
