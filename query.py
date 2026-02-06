@@ -2,7 +2,7 @@ import pyparsing as pp
 import authentication
 
 # main function
-# runs for how ever many queries user wants until enter 'quit'
+# runs for however many queries user wants until enter 'quit'
 def main():
     send_query()
 
@@ -26,7 +26,7 @@ def get_query():
     show = pp.Optional(pp.CaselessKeyword('show') + integer)
     sort = pp.Optional(pp.oneOf("asc desc"))
 
-    value = quotes | date
+    value = quotes | date # dates with single digits type like "1/1/2016" not "01/01/2016", note in help
 
     num_comparison = num_cols + num_operators + integer
     string_comparison = string_cols + string_operators + value
@@ -56,16 +56,16 @@ def get_query():
 
 # TODO: a function that takes in the parsed tokens, and interacts with the data
 def send_query():
+    db = authentication.authenticate()
+    collection_ref = db.collection("Women in Software Engineering")
+    col_order = ["company", "team", "num_female_eng", "num_eng", "percent_female_eng", "last_updated"]
+
     parsed_query = get_query()
 
-    # an query
+    # and query
     if 'and' in parsed_query:
         left_query = parsed_query[:3]
         right_query = parsed_query[4:]
-
-    # collection_ref = db.collection("Women in Software Engineering")
-    # query = collection_ref.where(filter=FieldFilter(parsed_query))
-    print(query)
 
 
 if __name__ == "__main__":
