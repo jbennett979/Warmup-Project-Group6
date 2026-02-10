@@ -49,13 +49,22 @@ def get_query():
     correct_input = False
     while not correct_input:
         user_query = input(">> ")
-        try:
-            parsed_query = query.parse_string(user_query)
-            print("yay")
-            print(parsed_query)
-            return parsed_query
-        except pp.ParseException:
-            print(f"{user_query} is not a valid query. Please refer to the help or try again.")
+        if user_query == 'help':
+            print("To make a query, reference these rules: \n"
+                  "Column Names:\ncompany\nteam\nnum_female_eng\npercent_female_eng\nlast_updated\n"
+                  "Operators:\n==\n>=\n<=\n>\n<\nfor"
+                  "Use a combination of these to make a query in addition to any ints as needed.\n"
+                  "Example Queries: >>company == 'GitHub'\n>> num_female_eng <= 40\n>>num_eng for 'GitHub'\n"
+                  "Please note, strings must be put in ''\nCompany names must follow a for operator\n")
+        else:
+            try:
+                parsed_query = query.parse_string(user_query)
+
+                print("yay")
+                print(parsed_query)
+                return parsed_query
+            except pp.ParseException:
+                    print(f"{user_query} is not a valid query. Please refer to the help or try again.")
 
 
 # TODO: a function that takes in the parsed tokens, and interacts with the data
@@ -69,7 +78,7 @@ def send_query():
         query = collection_ref
 
         # simple query
-        if all(item not in parsed_query for item in ['and', 'or']):
+        if any(item not in parsed_query for item in ['and', 'or']):
             # if no optionals
             if 'for' not in parsed_query:
                 query = query.where(*parsed_query)
