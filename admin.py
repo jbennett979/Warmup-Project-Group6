@@ -20,8 +20,8 @@ def delete_collection(coll_ref, batch_size):
         return delete_collection(coll_ref, batch_size)
 
 
-def upload_json(jsonFile):
-    with open(str(jsonFile), 'r') as json_file:
+def upload_json(json_file):
+    with open(str(json_file), 'r') as json_file:
         data = json.load(json_file)
     return data
 
@@ -40,7 +40,7 @@ def upload_content(data):
         collection_ref.add(entry)
 
 # Import json file
-jsonFile = sys.argv[1]
-data = upload_json(jsonFile)
+json_file = sys.argv[1]
+data = upload_json(json_file)
 # Upload file content to firestore
 upload_content(data)
