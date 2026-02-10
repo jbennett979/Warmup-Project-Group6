@@ -58,6 +58,7 @@ def get_query():
             print(f"{user_query} is not a valid query. Please refer to the help or try again.")
 
 
+
 # TODO: a function that takes in the parsed tokens, and interacts with the data
 def send_query():
     db = authentication.authenticate()
