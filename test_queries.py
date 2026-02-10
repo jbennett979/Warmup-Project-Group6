@@ -22,7 +22,7 @@ query2 = (collection_ref
           .select(["company", "team", "num_eng"])
           .where(filter=FieldFilter(*parsed_query2))
           .where(filter=FieldFilter(*parsed_query3))
-          .order_by("num_eng", "DESCENDING")
+          .order_by("num_eng", "DESCENDING") # sorting on composite queries would need too many field indexes
           )
 
 # compound OR query
@@ -44,7 +44,7 @@ query4 = (collection_ref
           )
 
 # convert query result to list of dictionaries
-result_list = [doc.to_dict() for doc in query2.stream()]
+result_list = [doc.to_dict() for doc in query4.stream()]
 
 try:
     # put cols in correct order since queries return cols in random order
