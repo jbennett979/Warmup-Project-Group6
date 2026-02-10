@@ -66,6 +66,12 @@ def send_query():
     if 'and' in parsed_query:
         left_query = parsed_query[:3]
         right_query = parsed_query[4:]
+#        if 'show' in parsed_query:
+#            query_ref = (collection_ref
+#                         .where(*left_query)
+#                         .where(*right_query)
+#                         .limit(10)
+#                         .stream())
 
 
 if __name__ == "__main__":
