@@ -15,10 +15,10 @@ def get_query():
     # defining the tokens/patterns to be matched
     string_cols = pp.one_of("company team last_updated")
     num_cols = pp.one_of("num_female_eng num_eng percent_female_eng")
-    num_operators = pp.one_of("== > < >= <= for")
-    string_operators = pp.one_of("== for")
+    num_operators = pp.one_of("== > < >= <=")
+    string_operators = pp.one_of("==")
     quotes = pp.QuotedString('"')
-    integer = pp.Word(pp.nums)
+    integer = pp.Word(pp.nums).set_parse_action(lambda tokens: int(tokens[0]))
     day = pp.Word(pp.nums, min=1, max=2)
     month = pp.Word(pp.nums, min=1, max=2)
     year = pp.Word(pp.nums, min=4, max=4)
@@ -28,7 +28,7 @@ def get_query():
     quit = pp.CaselessKeyword('quit')
     detail = pp.Optional(pp.CaselessKeyword('detail'))
     show = pp.Optional(pp.CaselessKeyword('show') + integer)
-    sort = pp.Optional(pp.one_of("asc desc"))
+    sort = pp.Optional(pp.one_of("ASCENDING DESCENDING"))
 
     value = quotes | date # dates with single digits type like "1/1/2016" not "01/01/2016", note in help
 
@@ -64,60 +64,131 @@ def send_query():
     collection_ref = db.collection("Women in Software Engineering")
     cols = ["company", "team", "num_female_eng", "num_eng", "percent_female_eng", "last_updated"]
 
-    try:
-        parsed_query = get_query()
-        query = collection_ref
+    # try:
+    parsed_query = get_query().as_list()
+    query = collection_ref
 
+    # if any optionals
+    if any(item in parsed_query for item in ['ASCENDING', 'DESCENDING', 'detail', 'show']):
         # simple query
-        if all(item not in parsed_query for item in ['and', 'or']):
-            # if no optionals
-            if 'for' not in parsed_query:
-                query = query.where(*parsed_query)
+        if 'and' not in parsed_query and 'or' not in parsed_query:
+            new_subquery2 = parsed_query[:3]
+            optionals = parsed_query[3:]
+            select_list = ['company', new_subquery2[0]]
 
-            else:
-                pass
+            query = (query
+                     .where(filter=FieldFilter(*new_subquery2))
+                     )
 
-            # if at least one optional
-            if any(item in parsed_query for item in ['detail', 'show', 'asc', 'desc']):
-                subquery = parsed_query[:3]
-                optionals = parsed_query[3:]
+        # and query
+        elif 'and' in parsed_query:
+            subquery1 = parsed_query[:3]
+            subquery2 = parsed_query[4:]
+            new_subquery2 = subquery2[:3]
+            optionals = subquery2[3:]
+            select_list = ['company', subquery1[0], subquery2[0]]
 
+            query = (query
+                     .where(filter=FieldFilter(*subquery1))
+                     .where(filter=FieldFilter(*new_subquery2))
+                     )
 
-        # compound query
+        # or query
         else:
             subquery1 = parsed_query[:3]
-            # if no optionals
-            if all(item not in parsed_query for item in ['detail', 'show', 'asc', 'desc']):
-                subquery2 = parsed_query[4:]
-            # if at least one optional
+            subquery2 = parsed_query[4:]
+            new_subquery2 = subquery2[:3]
+            optionals = subquery2[3:]
+            select_list = ['company', subquery1[0], subquery2[0]]
+
+            query = (query
+                     .where(filter=Or([FieldFilter(*subquery1),
+                                       FieldFilter(*new_subquery2)]))
+                     )
+
+        # all optionals
+        if len(optionals) == 4:
+            query = (query
+                     .order_by(new_subquery2[0], optionals[0])
+                     .limit(optionals[3]))
+
+
+        elif len(optionals) == 3:
+            # sort and show
+            if 'ASCENDING' in optionals or 'DESCENDING' in optionals:
+                query = (query
+                         .select(select_list)
+                         .order_by(new_subquery2[0], optionals[0])
+                         .limit(optionals[2]))
+
+            # detail and show
             else:
-                subquery2 = parsed_query[4:7]
-                optionals = parsed_query[7:]
+                query = (query
+                         .limit(optionals[2]))
 
-            # and query
-            if 'and' in parsed_query:
-                pass
 
-            # or query
+        elif len(optionals) == 2:
+            # show only
+            if 'show' in optionals:
+                query = (query
+                         .select(select_list)
+                         .limit(optionals[1]))
+
+            # sort and detail
             else:
-                pass
+                query = (query
+                         .order_by(new_subquery2[0], optionals[0]))
 
-        # convert query result to list of dictionaries
-        result_list = [doc.to_dict() for doc in query.stream()]
 
-        # put cols in correct order since queries return cols in random order
-        col_order = [col for col in cols if col in result_list[0].keys()]
-        ordered_list = [{key: row[key] for key in col_order} for row in result_list]
+        else:
+            # sort only
+            if 'ASCENDING' in optionals or 'DESCENDING' in optionals:
+                query = (query
+                         .select(select_list)
+                         .order_by(new_subquery2[0], optionals[0]))
 
-        # print results in grid
-        print(tabulate(ordered_list, headers="keys", tablefmt="grid"))
+            # detail only
+            else:
+                query = query
 
-    except IndexError:
-        print("No rows returned by this query.")
-    except Exception as error:
-        print("An exception occurred:")
-        print(f"Exception Type: {type(error).__name__}")
-        print(f"Exception Message: {error}")
+
+    # no optionals
+    else:
+        # simple query
+        if 'and' not in parsed_query and 'or' not in parsed_query:
+            query = query.where(*parsed_query)
+
+        # and query
+        elif 'and' in parsed_query:
+            query = (query
+                     .where(filter=FieldFilter(*parsed_query[:3]))
+                     .where(filter=FieldFilter(*parsed_query[4:]))
+                     )
+
+        # or query
+        else:
+            query = (query
+                     .where(filter=Or([FieldFilter(*parsed_query[:3]),
+                                       FieldFilter(*parsed_query[4:])]))
+                     )
+
+
+    # convert query result to list of dictionaries
+    result_list = [doc.to_dict() for doc in query.stream()]
+
+    # put cols in correct order since queries return cols in random order
+    col_order = [col for col in cols if col in result_list[0].keys()]
+    ordered_list = [{key: row[key] for key in col_order} for row in result_list]
+
+    # print results in grid
+    print(tabulate(ordered_list, headers="keys", tablefmt="grid"))
+
+    # except IndexError:
+    #     print("No rows returned by this query.")
+    # except Exception as error:
+    #     print("An exception occurred:")
+    #     print(f"Exception Type: {type(error).__name__}")
+    #     print(f"Exception Message: {error}")
 
 if __name__ == "__main__":
     main()
