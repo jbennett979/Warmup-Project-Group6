@@ -50,13 +50,30 @@ def get_query():
     correct_input = False
     while not correct_input:
         user_query = input(">> ")
-        try:
-            parsed_query = query.parse_string(user_query)
-            print("yay")
-            print(parsed_query)
-            return parsed_query
-        except pp.ParseException:
-            print(f"{user_query} is not a valid query. Please refer to the help or try again.")
+        if user_query == 'help':
+            print("To make a query, reference these rules: \n"
+                  "Column Names:\ncompany\nteam\nnum_female_eng\npercent_female_eng\nlast_updated\n"
+                  "Operators:\n==\n>=\n<=\n>\n<\n"
+                  "Optional Keywords:\ndetail\nshowint\nASCENDING\nDESCENDING\n"
+                  "Dates should be of the format 'm/d/yyyy'\n"
+                  "Use a combination of these to make a query in addition to any ints as needed.\n"
+                  "Simple queries should be of the format 'column_name operator value.'\n"
+                  "The columns 'company', 'team' and 'last_updated' are only compatible with the == operator.\n"
+                  "The columns 'num_female_eng', 'num_eng', and 'percent_female_eng' require an integer as the value.\n"
+                  "Compound queries should be of the format 'simple_query and/or simple_query'.\n"
+                  "Any combination of optional keywords may be placed at the end of a simple query in the order 'sort' 'detail' 'showint'.\n"
+                  "The sort keyword may not be used with compound queries.\n"
+                  "Any values of the type 'string' should be placed in double quotes.\n"
+                  'Example Queries: \n>>company == "GitHub"\n>> num_female_eng <= 40 and team == "N/A"\n>>num_eng > 10 DESCENDING detail show 5"\n'
+                  )
+        else:
+            try:
+                parsed_query = query.parse_string(user_query)
+                print("yay")
+                print(parsed_query)
+                return parsed_query
+            except pp.ParseException:
+                print(f"{user_query} is not a valid query. Please refer to the help or try again.")
 
 
 # a function that takes in the parsed tokens, and interacts with the data
