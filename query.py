@@ -7,23 +7,30 @@ from google.api_core.exceptions import FailedPrecondition
 # main function
 # runs for however many queries user wants until enter 'quit'
 def main():
-    # get_query()
     send_query()
 
 
 # a function that allows the user to query then parses for input validation
 def get_query():
     # defining the tokens/patterns to be matched
+
+    # columns
     string_cols = pp.one_of("company team last_updated")
     num_cols = pp.one_of("num_female_eng num_eng percent_female_eng")
+
+    # operators
     num_operators = pp.one_of("== > < >= <=")
     string_operators = pp.one_of("==")
+
+    # value formats
     quotes = pp.QuotedString('"')
     integer = pp.Word(pp.nums).set_parse_action(lambda tokens: int(tokens[0]))
     day = pp.Word(pp.nums, min=1, max=2)
     month = pp.Word(pp.nums, min=1, max=2)
     year = pp.Word(pp.nums, min=4, max=4)
     date = pp.Combine(month + pp.Literal("/") + day + pp.Literal("/") + year)
+
+    # keywords (and/or, help, quit, and optional keywords
     and_or = pp.one_of("and or")
     help = pp.CaselessKeyword('help')
     quit = pp.CaselessKeyword('quit')
@@ -31,8 +38,10 @@ def get_query():
     show = pp.Optional(pp.CaselessKeyword('show') + integer)
     sort = pp.Optional(pp.one_of("ASCENDING DESCENDING"))
 
-    value = quotes | date # dates with single digits type like "1/1/2016" not "01/01/2016", note in help
+    # definition of values
+    value = quotes | date
 
+    #query formatting
     num_comparison = num_cols + num_operators + integer
     string_comparison = string_cols + string_operators + value
     comparison = num_comparison | string_comparison
@@ -40,6 +49,7 @@ def get_query():
     help_query = help
     quit_query = quit
 
+    # options for queries
     query = (
             more_than_one + sort + detail + show |
             comparison + sort + detail + show |
@@ -47,30 +57,15 @@ def get_query():
             quit_query
     )
 
+    # get query from user and input validate against grammar
     correct_input = False
     while not correct_input:
         user_query = input(">> ")
         if user_query == 'help':
-            print("To make a query, reference these rules: \n"
-                  "Column Names:\ncompany\nteam\nnum_female_eng\npercent_female_eng\nlast_updated\n"
-                  "Operators:\n==\n>=\n<=\n>\n<\n"
-                  "Optional Keywords:\ndetail\nshowint\nASCENDING\nDESCENDING\n"
-                  "Dates should be of the format 'm/d/yyyy'\n"
-                  "Use a combination of these to make a query in addition to any ints as needed.\n"
-                  "Simple queries should be of the format 'column_name operator value.'\n"
-                  "The columns 'company', 'team' and 'last_updated' are only compatible with the == operator.\n"
-                  "The columns 'num_female_eng', 'num_eng', and 'percent_female_eng' require an integer as the value.\n"
-                  "Compound queries should be of the format 'simple_query and/or simple_query'.\n"
-                  "Any combination of optional keywords may be placed at the end of a simple query in the order 'sort' 'detail' 'showint'.\n"
-                  "The sort keyword may not be used with compound queries.\n"
-                  "Any values of the type 'string' should be placed in double quotes.\n"
-                  'Example Queries: \n>>company == "GitHub"\n>> num_female_eng <= 40 and team == "N/A"\n>>num_eng > 10 DESCENDING detail show 5"\n'
-                  )
+            print_help()
         else:
             try:
                 parsed_query = query.parse_string(user_query)
-                print("yay")
-                print(parsed_query)
                 return parsed_query
             except pp.ParseException:
                 print(f"{user_query} is not a valid query. Please refer to the help or try again.")
@@ -215,14 +210,37 @@ def send_query():
                 # print results in grid
                 print(tabulate(ordered_list, headers="keys", tablefmt="grid"))
 
+        # if the query does not return any rows
         except IndexError:
             print("No rows returned by this query.")
+
+        # if the user tries to sort with a compound query
         except FailedPrecondition:
             print("This query requires an index.")
+
+        # any other errors
         except Exception as error:
             print("An exception occurred:")
             print(f"Exception Type: {type(error).__name__}")
             print(f"Exception Message: {error}")
+
+# function to print help menu
+def print_help():
+    print("To make a query, reference these rules: \n"
+          "Column Names:\ncompany\nteam\nnum_female_eng\npercent_female_eng\nlast_updated\n"
+          "Operators:\n==\n>=\n<=\n>\n<\n"
+          "Optional Keywords:\ndetail\nshowint\nASCENDING\nDESCENDING\n"
+          "Dates should be of the format 'm/d/yyyy'\n"
+          "Use a combination of these to make a query in addition to any ints as needed.\n"
+          "Simple queries should be of the format 'column_name operator value.'\n"
+          "The columns 'company', 'team' and 'last_updated' are only compatible with the == operator.\n"
+          "The columns 'num_female_eng', 'num_eng', and 'percent_female_eng' require an integer as the value.\n"
+          "Compound queries should be of the format 'simple_query and/or simple_query'.\n"
+          "Any combination of optional keywords may be placed at the end of a simple query in the order 'sort' 'detail' 'showint'.\n"
+          "The sort keyword may not be used with compound queries.\n"
+          "Any values of the type 'string' should be placed in double quotes.\n"
+          'Example Queries: \n>>company == "GitHub"\n>> num_female_eng <= 40 and team == "N/A"\n>>num_eng > 10 DESCENDING detail show 5"\n'
+          )
 
 if __name__ == "__main__":
     main()
