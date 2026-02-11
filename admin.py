@@ -20,12 +20,14 @@ def delete_collection(coll_ref, batch_size):
         return delete_collection(coll_ref, batch_size)
 
 
+# Load in json file for uploading
 def upload_json(json_file):
     with open(str(json_file), 'r') as json_file:
         data = json.load(json_file)
     return data
 
 
+# Delete everything in collection and upload json file
 def upload_content(data):
     # Variable to access database from firestore
     db = authentication.authenticate()
@@ -38,6 +40,7 @@ def upload_content(data):
 
     for entry in data:
         collection_ref.add(entry)
+
 
 # Import json file
 json_file = sys.argv[1]
